@@ -93,23 +93,22 @@ export async function POST(request: NextRequest) {
     }
 
     // 获取API密钥
-    const apiKey = process.env.OPENROUTER_API_KEY || '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';
+    const apiKey = process.env.OPENROUTER_API_KEY;
     
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'API配置错误' },
+        { error: '请配置OpenRouter API密钥' },
         { status: 500 }
       );
     }
 
     // 调用OpenRouter API
-    
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://first-principle-ai-bot.vercel.app',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://first-principle-ai-bot.vercel.app',
         'X-Title': 'First Principle AI Bot',
       },
       body: JSON.stringify({
@@ -132,6 +131,14 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
+      
+      if (response.status === 401) {
+        return NextResponse.json(
+          { error: 'OpenRouter API密钥无效或未正确配置' },
+          { status: 500 }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'AI服务暂时不可用，请稍后重试' },
         { status: 500 }
@@ -158,4 +165,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
