@@ -95,12 +95,29 @@ export async function POST(request: NextRequest) {
     // 获取API密钥
     const apiKey = process.env.OPENROUTER_API_KEY;
     
+    // 添加调试信息
+    console.log('Environment check:', {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey?.length || 0,
+      apiKeyPrefix: apiKey?.substring(0, 12) || 'undefined',
+      appUrl: process.env.NEXT_PUBLIC_APP_URL || 'not-set'
+    });
+    
     if (!apiKey) {
+      console.error('OPENROUTER_API_KEY not found in environment variables');
       return NextResponse.json(
         { error: '请配置OpenRouter API密钥' },
         { status: 500 }
       );
     }
+
+    // 获取正确的referer URL
+    const refererUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                      request.headers.get('host') ? 
+                      `https://${request.headers.get('host')}` : 
+                      'https://localhost:3000';
+
+    console.log('Using referer URL:', refererUrl);
 
     // 调用OpenRouter API
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -108,7 +125,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://first-principle-ai-bot.vercel.app',
+        'HTTP-Referer': refererUrl,
         'X-Title': 'First Principle AI Bot',
       },
       body: JSON.stringify({
